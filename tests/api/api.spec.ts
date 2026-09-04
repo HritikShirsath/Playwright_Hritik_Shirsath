@@ -1,45 +1,31 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../../fixtures/mock-api.fixture'
 
 test.describe('API Tests', () => {
-
-  test('GET API should return users', async ({ request }) => {
-
-    const response = await request.get(
-      'https://jsonplaceholder.typicode.com/users'
-    )
+  test('GET users returns the expected schema', async ({
+    request,
+    apiBaseURL,
+  }) => {
+    const response = await request.get(`${apiBaseURL}/users`)
 
     expect(response.status()).toBe(200)
-
-    const users = await response.json()
-
-    expect(users.length).toBeGreaterThan(0)
-
-    expect(users[0]).toHaveProperty('id')
-    expect(users[0]).toHaveProperty('name')
-    expect(users[0]).toHaveProperty('email')
+    await expect(response).toBeOK()
+    await expect(response.json()).resolves.toEqual([
+      { id: 1, name: 'Test User', email: 'test@example.com' },
+    ])
   })
 
-
-  test('POST API should create a user', async ({ request }) => {
-
-    const response = await request.post(
-      'https://jsonplaceholder.typicode.com/users',
-      {
-        data: {
-          name: 'John Doe',
-          username: 'johndoe',
-          email: 'john@example.com',
-        },
-      }
-    )
+  test('POST users creates a user', async ({ request, apiBaseURL }) => {
+    const payload = {
+      name: 'John Doe',
+      username: 'johndoe',
+      email: 'john@example.com',
+    }
+    const response = await request.post(`${apiBaseURL}/users`, {
+      data: payload,
+    })
 
     expect(response.status()).toBe(201)
 
-    const responseBody = await response.json()
-
-    expect(responseBody.name).toBe('John Doe')
-    expect(responseBody.username).toBe('johndoe')
-    expect(responseBody.email).toBe('john@example.com')
+    await expect(response.json()).resolves.toEqual({ id: 101, ...payload })
   })
-
 })

@@ -1,7 +1,7 @@
 import { Page, Locator } from '@playwright/test'
 
 export class IframePage {
-  readonly page: Page;
+  readonly page: Page
   readonly frame: ReturnType<Page['frameLocator']>
   readonly messageInput: Locator
   readonly submitButton: Locator

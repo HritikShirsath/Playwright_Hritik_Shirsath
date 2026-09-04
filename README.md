@@ -40,7 +40,7 @@ PowerShell:
 Copy-Item .env.example .env
 ```
 
-The global setup validates `BASE_URL`, `SAUCE_USERNAME`, and `SAUCE_PASSWORD` before tests run. Environment files are excluded from version control, so never commit real credentials.
+Environment files are excluded from version control, so never commit real credentials. SauceDemo credentials are validated only when a test requests the `loggedInPage` fixture; API, iframe, and visual tests remain runnable without them.
 
 ## Project structure
 
@@ -52,7 +52,6 @@ The global setup validates `BASE_URL`, `SAUCE_USERNAME`, and `SAUCE_PASSWORD` be
 ├── tests/
 │   ├── api/               API and authentication tests
 │   └── ui/                Browser-based UI and visual tests
-├── global-setup.ts        Environment validation
 ├── playwright.config.ts   Test runner and browser configuration
 ├── Dockerfile             Playwright container image
 └── docker-compose.yml     Containerized test execution
@@ -72,9 +71,8 @@ The global setup validates `BASE_URL`, `SAUCE_USERNAME`, and `SAUCE_PASSWORD` be
 
 ### API tests
 
-- GET users from JSONPlaceholder
-- POST a new user to JSONPlaceholder
-- Successful and unsuccessful authentication responses using route mocking
+- GET and POST user requests against a deterministic local API server
+- Successful and unsuccessful authentication responses from that local server
 
 ## Running tests
 
@@ -91,6 +89,8 @@ npm run test:chromium
 npm run test:firefox
 npm run test:webkit
 npm run test:mobile
+npm run test:api
+npm run test:visual
 ```
 
 Other useful commands:
@@ -99,9 +99,16 @@ Other useful commands:
 npm run test:list   # List discovered tests without running them
 npm run test:ui     # Open Playwright UI mode
 npm run report      # Open the latest HTML report
+npm run typecheck   # Check TypeScript without emitting files
+npm run lint        # Run ESLint
+npm run format:check # Verify Prettier formatting
 ```
 
-The configured browser projects are Chromium, Firefox, WebKit, and iPhone 17 Pro Max emulation. Tests run headlessly by default. On failure, Playwright retains screenshots, traces, and videos for diagnosis.
+The UI suite runs in Chromium, Firefox, WebKit, and iPhone 17 Pro Max emulation. API tests run once in a dedicated project because they do not need cross-browser rendering coverage. Tests run headlessly by default. On failure, Playwright retains screenshots, traces, and videos for diagnosis.
+
+### Firefox on Windows
+
+Some Windows security configurations prevent Firefox from creating its sandboxed content process. The Firefox project applies a Windows-only compatibility setting that disables Firefox content and GPU sandboxing for local automated tests. It is not applied on CI/Linux or to other browsers. If the local security policy is adjusted to permit Firefox child processes, remove this workaround.
 
 ### QA environment
 
@@ -117,7 +124,7 @@ The configuration defaults to `.env` when `ENV_FILE` is not set.
 
 ### Visual baselines
 
-The visual test runs in Chromium and compares the local API demo page with its committed screenshot baseline. If the page intentionally changes, regenerate the baseline with:
+The visual test runs only in Chromium and compares the local API demo page with its committed screenshot baseline. Its viewport, color scheme, scale, animations, and caret behavior are fixed so screenshots do not vary by machine defaults. If the page intentionally changes, regenerate the baseline with:
 
 ```powershell
 npx playwright test tests/ui/visual.spec.ts --project=chromium --update-snapshots
@@ -131,8 +138,8 @@ Build and run the test container:
 docker compose up --build
 ```
 
-The container uses the official Playwright image and mounts the generated test report and test results into the project directory. Credentials are supplied at runtime through `.env` and are excluded from the Docker build context.
+The container uses the matching official Playwright image and runs as its non-root `pwuser`. It mounts the generated HTML report, test results, and Allure results into the project directory. Credentials are supplied at runtime through `.env` and are excluded from the Docker build context.
 
 ## Test design
 
-The project uses the Page Object Model to keep selectors and user actions in `pages/`. The custom `loggedInPage` fixture in `fixtures/test.fixture.ts` performs the SauceDemo login automatically for tests that require an authenticated session. API tests use Playwright's request fixture, while mocked responses use route interception so they remain deterministic. Visual coverage is limited to Chromium because screenshot rendering varies between browser engines.
+The project uses the Page Object Model to keep selectors and user actions in `pages/`. The custom `loggedInPage` fixture in `fixtures/test.fixture.ts` performs the SauceDemo login automatically for tests that require an authenticated session. API tests use Playwright's request fixture with a local in-process server, so they remain deterministic and do not rely on public services. Visual coverage is limited to Chromium because screenshot rendering varies between browser engines.

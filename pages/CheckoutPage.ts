@@ -1,7 +1,7 @@
 import { Page, Locator } from '@playwright/test'
 
 export class CheckoutPage {
-  readonly page: Page;
+  readonly page: Page
   readonly checkoutButton: Locator
   readonly firstNameInput: Locator
   readonly lastNameInput: Locator
@@ -26,7 +26,9 @@ export class CheckoutPage {
 
     this.finishButton = page.getByRole('button', { name: 'Finish' })
 
-    this.confirmationMessage = page.getByText('Thank you for your order!', { exact: true })
+    this.confirmationMessage = page.getByText('Thank you for your order!', {
+      exact: true,
+    })
   }
 
   async startCheckout() {
@@ -36,7 +38,7 @@ export class CheckoutPage {
   async fillCustomerDetails(
     firstName: string,
     lastName: string,
-    postalCode: string
+    postalCode: string,
   ) {
     await this.firstNameInput.fill(firstName)
     await this.lastNameInput.fill(lastName)

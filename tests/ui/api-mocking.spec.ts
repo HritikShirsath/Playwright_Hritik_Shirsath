@@ -2,10 +2,9 @@ import { test, expect } from '@playwright/test'
 import path from 'path'
 
 test('should mock API response', async ({ page }) => {
-
   await page.route(
     'https://jsonplaceholder.typicode.com/users/1',
-    async route => {
+    async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -15,7 +14,7 @@ test('should mock API response', async ({ page }) => {
           email: 'mock@example.com',
         }),
       })
-    }
+    },
   )
 
   const filePath = path.resolve('test-data/api-demo.html')
@@ -24,6 +23,5 @@ test('should mock API response', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Load User' }).click()
 
-  await expect(page.locator('#user-name'))
-    .toHaveText('Mock User')
+  await expect(page.locator('#user-name')).toHaveText('Mock User')
 })

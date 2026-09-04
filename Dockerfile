@@ -1,8 +1,11 @@
-FROM mcr.microsoft.com/playwright:v1.62.1-noble
+FROM mcr.microsoft.com/playwright:v1.61.1-noble
 
-RUN mkdir /app
 WORKDIR /app
-COPY . /app/
-
+COPY package.json package-lock.json ./
 RUN npm ci
-RUN npx playwright install
+
+COPY . ./
+RUN chown -R pwuser:pwuser /app
+USER pwuser
+
+CMD ["npm", "test"]
